@@ -21,17 +21,10 @@ jobs:
     steps:
       # Checkout the code as the first step.
       - checkout
-      - restore_cache:
-          keys:
-            - pip-{{ checksum "backend/requirements.txt" }}
       - run:
           name: Install dependencies
           command: pip install -r requirements.txt
           working_directory: backend
-      - save_cache:
-          key: pip-{{ checksum "backend/requirements.txt" }}
-          paths:
-            - ~/.cache/pip
       - run:
           name: Run tests
           command: pytest
