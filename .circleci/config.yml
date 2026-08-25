@@ -24,6 +24,7 @@ jobs:
       - restore_cache:
           keys:
             - pip-{{ checksum "backend/requirements.txt" }}
+            - pip-
       - run:
           name: Install dependencies
           command: pip install -r requirements.txt
