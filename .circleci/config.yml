@@ -25,6 +25,9 @@ jobs:
           keys:
             - pip-{{ checksum "backend/requirements.txt" }}
       - run:
+          name: Upgrade pip
+          command: pip install --upgrade pip
+      - run:
           name: Install dependencies
           command: pip install -r requirements.txt
           working_directory: backend
