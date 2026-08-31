@@ -1,0 +1,76 @@
+# 05 — PostgreSQL (in-cluster)
+# Used for teaching Kubernetes locally (minikube/kind).
+# In production on EKS, this is replaced by RDS (provisioned by Terraform).
+#
+# Includes:
+#   - PersistentVolumeClaim: requests storage so data survives pod restarts
+#   - Deployment: runs the postgres:15 container
+#   - Service: exposes postgres inside the cluster on port 5432
+#
+# Apply:  kubectl apply -f 05-postgres.yaml
+# Check:  kubectl get pods,svc,pvc -n employee-app
+# Connect: kubectl exec -it <postgres-pod> -n employee-app -- psql -U postgres -d employees
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: employee-app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: employee-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+            - name: POSTGRES_DB
+              value: employees
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: employee-app
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

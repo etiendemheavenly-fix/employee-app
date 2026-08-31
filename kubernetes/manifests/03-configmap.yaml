@@ -1,0 +1,18 @@
+# 03 — ConfigMap
+# Stores non-sensitive configuration as key-value pairs.
+# Injected into pods as environment variables or mounted as files.
+# For sensitive data (passwords, tokens) use Secrets instead (see 04-secret.yaml).
+#
+# Apply:  kubectl apply -f 03-configmap.yaml
+# Check:  kubectl get configmap app-config -n employee-app
+# Inspect: kubectl describe configmap app-config -n employee-app
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: employee-app
+data:
+  ENVIRONMENT: "dev"
+  LOG_GROUP: "/landmark/employee-app"
+  PORT: "5000"

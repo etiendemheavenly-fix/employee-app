@@ -1,0 +1,12 @@
+# 02 — Namespace
+# Namespaces provide logical isolation within a cluster.
+# All app resources live in employee-app.
+# Monitoring resources live in monitoring.
+#
+# Apply:  kubectl apply -f 02-namespace.yaml
+# Check:  kubectl get namespaces
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: employee-app

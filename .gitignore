@@ -1,0 +1,37 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+.terraform.lock.hcl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.db
+.pytest_cache/
+*.egg-info/
+venv/
+.env
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Java
+target/
+
+# Logs
+*.log
+
+# JDK
+oracleJdk-26/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

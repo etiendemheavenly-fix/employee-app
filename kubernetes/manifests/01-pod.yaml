@@ -1,0 +1,28 @@
+# 01 — Pod
+# The smallest deployable unit in Kubernetes.
+# A Pod wraps one or more containers and runs on a Node.
+# Pods are ephemeral — if this Pod dies, it is NOT restarted automatically.
+# That is why we use Deployments in production (see 03-deployment.yaml).
+#
+# Apply:  kubectl apply -f 01-pod.yaml
+# Check:  kubectl get pods -n employee-app
+# Logs:   kubectl logs backend-pod -n employee-app
+# Exec:   kubectl exec -it backend-pod -n employee-app -- bash
+# Delete: kubectl delete -f 01-pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backend-pod
+  namespace: employee-app
+  labels:
+    app: backend
+spec:
+  containers:
+    - name: backend
+      image: 075120018043.dkr.ecr.us-east-1.amazonaws.com/employee-backend:latest
+      ports:
+        - containerPort: 5000
+      env:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:postgres@postgres:5432/employees"

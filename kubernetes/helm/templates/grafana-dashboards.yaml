@@ -1,0 +1,16 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-custom-dashboards
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  platform.json: |-
+{{ .Files.Get "dashboards/platform.json" | indent 4 }}
+  application.json: |-
+{{ .Files.Get "dashboards/application.json" | indent 4 }}
+  cloudwatch-logs.json: |-
+{{ .Files.Get "dashboards/cloudwatch-logs.json" | indent 4 }}
+{{- end }}

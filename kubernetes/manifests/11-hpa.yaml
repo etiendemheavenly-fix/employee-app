@@ -1,0 +1,38 @@
+# 11 — HorizontalPodAutoscaler (HPA)
+# Automatically scales the number of Pod replicas based on CPU or memory usage.
+# When traffic increases, HPA adds more pods. When traffic drops, it scales down.
+#
+# Prerequisites:
+#   - metrics-server must be installed in the cluster
+#     kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+#
+# Apply:   kubectl apply -f 11-hpa.yaml
+# Check:   kubectl get hpa -n employee-app
+# Watch:   kubectl get hpa -n employee-app --watch
+# Inspect: kubectl describe hpa backend -n employee-app
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend
+  namespace: employee-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

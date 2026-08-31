@@ -1,0 +1,110 @@
+# Backend configuration
+backend:
+  image: 075120018043.dkr.ecr.us-east-1.amazonaws.com/employee-backend
+  tag: be-prod-20260831-012116
+  replicas: 2
+  port: 5000
+
+# Frontend configuration
+frontend:
+  image: 075120018043.dkr.ecr.us-east-1.amazonaws.com/employee-frontend
+  tag: fe-prod-20260831-012116
+  replicas: 2
+  port: 80
+
+# In-cluster PostgreSQL
+# Set enabled: true for local Kubernetes (minikube/kind) — no RDS or Secrets Manager needed
+# Set enabled: false for EKS production — uses RDS via External Secrets Operator
+postgres:
+  enabled: false
+  user: postgres
+  password: postgres
+  database: employees
+  storage: 5Gi
+
+# Service Account for Secrets Manager access
+serviceAccount:
+  name: app-sa
+  roleArn: "arn:aws:iam::075120018043:role/landmark-cluster-dev-app-sa"
+
+# AWS region
+aws:
+  region: "us-east-1"
+
+# External Secrets - AWS Secrets Manager
+# Only used when postgres.enabled is false (EKS + RDS)
+externalSecrets:
+  enabled: true
+  secretName: "landmark-cluster-dev/employee-app"
+  refreshInterval: "1m"
+
+# Ingress via ALB
+ingress:
+  enabled: true
+  ingressClass: alb
+
+# CloudWatch Logging
+logging:
+  logGroup: "/landmark/employee-app"
+  environment: "dev"
+
+# Monitoring — deploys kube-prometheus-stack as a subchart
+# Includes: Prometheus, Grafana, node-exporter, kube-state-metrics, AlertManager
+monitoring:
+  enabled: true
+
+# kube-prometheus-stack subchart values
+# Full config reference: https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
+kube-prometheus-stack:
+  alertmanager:
+    enabled: false
+
+  grafana:
+    adminPassword: admin123
+    serviceAccount:
+      annotations:
+        eks.amazonaws.com/role-arn: "arn:aws:iam::075120018043:role/landmark-cluster-dev-app-sa"
+    service:
+      type: LoadBalancer
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    # Sidecar watches for ConfigMaps labelled grafana_dashboard=1 and loads them automatically
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+    additionalDataSources:
+      - name: CloudWatch
+        type: cloudwatch
+        uid: cloudwatch
+        access: proxy
+        jsonData:
+          authType: default
+          defaultRegion: us-east-1
+          logGroups:
+            - name: /landmark/employee-app
+
+  prometheus:
+    prometheusSpec:
+      # Pick up ServiceMonitors from all namespaces
+      serviceMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorNamespaceSelector: {}
+      retention: 7d
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp2
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi
+
+  nodeExporter:
+    enabled: true
+
+  kubeStateMetrics:
+    enabled: true

@@ -1,0 +1,46 @@
+# 08 — Ingress
+# An Ingress exposes HTTP routes from outside the cluster to Services inside it.
+# The AWS Load Balancer Controller watches for Ingress objects and provisions an ALB.
+#
+# Routing rules:
+#   /api/*  →  backend service :5000
+#   /*      →  frontend service :80
+#
+# Prerequisites:
+#   - AWS Load Balancer Controller installed in kube-system
+#   - Subnets tagged: kubernetes.io/role/elb=1 (public) or internal-elb=1 (private)
+#
+# Apply:   kubectl apply -f 08-ingress.yaml
+# Check:   kubectl get ingress -n employee-app
+# URL:     kubectl get ingress employee-app -n employee-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: employee-app
+  namespace: employee-app
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 5000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

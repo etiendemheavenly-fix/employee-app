@@ -1,0 +1,89 @@
+# 06 — Deployment
+# A Deployment manages a ReplicaSet which manages Pods.
+# It ensures the desired number of replicas are always running.
+# If a Pod crashes, the Deployment controller creates a new one automatically.
+# Rolling updates: new pods become Ready before old pods are terminated.
+#
+# Apply:   kubectl apply -f 06-deployment.yaml
+# Check:   kubectl get deployments -n employee-app
+# Pods:    kubectl get pods -n employee-app
+# Rollout: kubectl rollout status deployment/backend -n employee-app
+# History: kubectl rollout history deployment/backend -n employee-app
+# Undo:    kubectl rollout undo deployment/backend -n employee-app
+# Scale:   kubectl scale deployment backend --replicas=3 -n employee-app
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: employee-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: 075120018043.dkr.ecr.us-east-1.amazonaws.com/employee-backend:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DATABASE_URL
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: ENVIRONMENT
+            - name: LOG_GROUP
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: LOG_GROUP
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: employee-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: 075120018043.dkr.ecr.us-east-1.amazonaws.com/employee-frontend:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
